@@ -1,5 +1,8 @@
 ## binn-rs
 
+[![Build](https://github.com/funbiscuit/binn-rs/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/funbiscuit/binn-rs/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/github/funbiscuit/binn-rs/branch/master/graph/badge.svg?token=SeMaDpk6rL)](https://codecov.io/github/funbiscuit/binn-rs)
+
 Small [binn](https://github.com/liteserver/binn) implementation with no_std/no_alloc support.
 
 API is not quite stable so breaking changes are possible.
