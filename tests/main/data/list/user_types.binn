@@ -1,0 +1,59 @@
+// test list that includes user types for each supported storage with
+// both small subtype (<16) and big subtype (>16)
+
+\xE0              // [type] list (container)
+\x4C              // [size] container total size
+\x0E              // [count] items
+
+
+\x05               // [type] = empty, subtype 5
+
+\x10\x14           // [type] = empty, subtype 20
+
+
+\x26              // [type] = byte, subtype 6
+\x3E              // [data] (62)
+
+\x30\x28          // [type] = byte, subtype 40
+\x3D              // [data] (61)
+
+
+\x47              // [type] = word, subtype 7
+\x18\x76          // [data] (6262)
+
+\x50\x50          // [type] = word, subtype 80
+\x18\x11          // [data] (6161)
+
+
+\x68              // [type] = dword, subtype 8
+\x03\xBB\x99\xD6  // [data] (62626262)
+
+\x70\xA0          // [type] = dword, subtype 160
+\x03\xAC\x30\x21  // [data] (61616161)
+
+
+\x89              // [type] = qword, subtype 9
+\x00\x16\x3F\xD3
+\x4D\xBE\xAF\xD6  // [data] (6262626262626262)
+
+\x91\x40          // [type] = qword, subtype 320
+\x00\x15\xE3\xF5
+\x0E\x8E\x31\x21  // [data] (6161616161616161)
+
+
+\xAA              // [type] = user text, subtype 10
+\x04              // [size]
+Text\x00          // [data] (null terminated)
+
+\xB2\x85          // [type] = user text, subtype 645
+\x04              // [size]
+Date\x00          // [data] (null terminated)
+
+
+\xCF              // [type] = blob, subtype 15
+\x04              // [size]
+\x62\x61\x62\x61  // [data] (bytes)
+
+\xDF\xFF          // [type] = blob, subtype 4095
+\x04              // [size]
+\x61\x62\x61\x62  // [data] (bytes)

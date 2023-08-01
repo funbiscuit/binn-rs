@@ -1,0 +1,45 @@
+// test object that includes all containers with some primitive values
+
+\xE1              // [type] map (container)
+\x44              // [size] container total size
+\x03              // [count] key/value pairs
+
+\x00\x00\x00\x0A  // key (10)
+
+\xE0              // [type] list (container)
+\x08              // [size] container total size
+\x03              // [count] key/value pairs
+
+\x00              // [type] = null
+\x20              // [type] = uint8
+\x3E              // [data] (62)
+\x21              // [type] = int8
+\x3D              // [data] (61)
+
+\x00\x00\x00\x14  // key (20)
+
+\xE1              // [type] map (container)
+\x14              // [size] container total size
+\x03              // [count] key/value pairs
+\xF0\x9f\x8f\xb3  // key (-257978445)
+\x00              // [type] = null
+\x0F\x60\x70\x4D  // key (257978445)
+\x20              // [type] = uint8
+\x3E              // [data] (62)
+\x00\x00\x00\x2A  // key (42)
+\x21              // [type] = int8
+\x3D              // [data] (61)
+
+\x00\x00\x00\x1E  // key (30)
+
+\xE2              // [type] object (container)
+\x19              // [size] container total size
+\x03              // [count] key/value pairs
+\x06v_null        // key
+\x00              // [type] = null
+\x04n_u8          // key
+\x20              // [type] = uint8
+\x3E              // [data] (62)
+\x04n_i8          // key
+\x21              // [type] = int8
+\x3D              // [data] (61)

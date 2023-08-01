@@ -1,0 +1,73 @@
+// test map that includes user types for each supported storage with
+// both small subtype (<16) and big subtype (>16)
+
+\xE1              // [type] map (container)
+\x80\x00\x00\x87  // [size] container total size
+\x0E  // [count] key/value pairs
+
+
+\x00\x00\x00\x0A   // key (10)
+\x05               // [type] = empty, subtype 5
+
+\xFF\xFF\xFF\xF6   // key (-10)
+\x10\x14           // [type] = empty, subtype 20
+
+
+\x00\x00\x00\x14  // key (20)
+\x26              // [type] = byte, subtype 6
+\x3E              // [data] (62)
+
+\xFF\xFF\xFF\xEC  // key (-20)
+\x30\x28          // [type] = byte, subtype 40
+\x3D              // [data] (61)
+
+
+\x00\x00\x01\x1F  // key (287)
+\x47              // [type] = word, subtype 7
+\x18\x76          // [data] (6262)
+
+\xFF\xFF\xFE\xE1  // key (-287)
+\x50\x50          // [type] = word, subtype 80
+\x18\x11          // [data] (6161)
+
+
+\x00\x00\x04\xD2  // key (1234)
+\x68              // [type] = dword, subtype 8
+\x03\xBB\x99\xD6  // [data] (62626262)
+
+\xFF\xFF\xFB\x2E  // key (-1234)
+\x70\xA0          // [type] = dword, subtype 160
+\x03\xAC\x30\x21  // [data] (61616161)
+
+
+\x00\x00\x16\x16  // key (5654)
+\x89              // [type] = qword, subtype 9
+\x00\x16\x3F\xD3
+\x4D\xBE\xAF\xD6  // [data] (6262626262626262)
+
+\xFF\xFF\xE9\xEA  // key (-5654)
+\x91\x40          // [type] = qword, subtype 320
+\x00\x15\xE3\xF5
+\x0E\x8E\x31\x21  // [data] (6161616161616161)
+
+
+\x00\x2A\x0F\x47  // key (2756423)
+\xAA              // [type] = user text, subtype 10
+\x04              // [size]
+Text\x00          // [data] (null terminated)
+
+\xFF\xD5\xF0\xB9  // key (-2756423)
+\xB2\x85          // [type] = user text, subtype 645
+\x04              // [size]
+Date\x00          // [data] (null terminated)
+
+
+\x7F\xFF\xFF\xFF  // key (2147483647)
+\xCF              // [type] = blob, subtype 15
+\x04              // [size]
+\x62\x61\x62\x61  // [data] (bytes)
+
+\x80\x00\x00\x00  // key (-2147483648)
+\xDF\xFF          // [type] = blob, subtype 4095
+\x04              // [size]
+\x61\x62\x61\x62  // [data] (bytes)

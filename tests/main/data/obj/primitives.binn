@@ -1,0 +1,94 @@
+// test object that includes all values (without user types and containers)
+
+\xE2              // [type] object (container)
+\x80\x00\x00\xEE  // [size] container total size
+\x13              // [count] key/value pairs
+
+
+\x06v_null        // key
+\x00              // [type] = null
+
+\x06v_true        // key
+\x01              // [type] = true
+
+\x07v_false       // key
+\x02              // [type] = false
+
+
+\x04n_u8          // key
+\x20              // [type] = uint8
+\x3E              // [data] (62)
+
+\x04n_i8          // key
+\x21              // [type] = int8
+\x3D              // [data] (61)
+
+
+\x05n_u16         // key
+\x40              // [type] = uint16
+\x18\x76          // [data] (6262)
+
+\x05n_i16         // key
+\x41              // [type] = int16
+\x18\x11          // [data] (6161)
+
+
+\x05n_u32         // key
+\x60              // [type] = uint32
+\x03\xBB\x99\xD6  // [data] (62626262)
+
+\x05n_i32         // key
+\x61              // [type] = int32
+\x03\xAC\x30\x21  // [data] (61616161)
+
+\x05n_f32         // key
+\x62              // [type] = float
+\x3F\x20\x4E\xA5  // [data] (0.6262)
+
+
+\x05n_u64         // key
+\x80              // [type] = uint64
+\x00\x16\x3F\xD3
+\x4D\xBE\xAF\xD6  // [data] (6262626262626262)
+
+\x05n_i64         // key
+\x81              // [type] = int64
+\x00\x15\xE3\xF5
+\x0E\x8E\x31\x21  // [data] (6161616161616161)
+
+\x05n_f64         // key
+\x82              // [type] = double
+\x3F\xE3\xB7\x17
+\x58\xE2\x19\x65  // [data] (0.6161)
+
+
+\x06s_text        // key
+\xA0              // [type] = text
+\x04              // [size]
+Text\x00          // [data] (null terminated)
+
+\x0As_datetime    // key
+\xA1              // [type] = datetime
+\x08              // [size]
+DateTime\x00      // [data] (null terminated)
+
+\x06s_date        // key
+\xA2              // [type] = date
+\x04              // [size]
+Date\x00          // [data] (null terminated)
+
+\x06s_time        // key
+\xA3              // [type] = time
+\x04              // [size]
+Time\x00          // [data] (null terminated)
+
+\x09s_decimal     // key
+\xA4              // [type] = decimal str
+\x07              // [size]
+Decimal\x00       // [data] (null terminated)
+
+
+\x06b_blob        // key
+\xC0              // [type] = blob
+\x04              // [size]
+\x62\x61\x62\x61  // [data] (bytes)
