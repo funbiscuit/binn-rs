@@ -1,6 +1,15 @@
 [package]
 name = "binn-rs"
 version = "0.1.0"
+authors = ["Sviatoslav Kokurin <kokurinsv@gmail.com>"]
+description = """
+Library to serialize/deserialize binn format with no_std/no_alloc support.
+"""
+repository = "https://github.com/funbiscuit/binn-rs"
+readme = "README.md"
+keywords = ["serialization", "deserialization", "no_std"]
+license = "MIT OR Apache-2.0"
+categories = ["data-structures", "no-std", "embedded", "encoding", "parser-implementations"]
 edition = "2021"
 
 [dependencies]
