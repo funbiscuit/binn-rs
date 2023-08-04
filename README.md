@@ -10,25 +10,25 @@ Any breaking change will lead to bump in major version (e.g. `0.1.0` -> `0.2.0`)
 
 ## Features
 
-* Static allocation
-* Dynamic allocation (`alloc` feature)
-* User defined primitives support
-* Zero copy (for read operations)
+- [x] Static allocation
+- [ ] Dynamic allocation (`alloc` feature)
+- [x] User defined primitives support
+- [x] Zero copy (for read operations)
 
 ## Data type support
 
 | Data type                                                 | Supported |
 |-----------------------------------------------------------|:---------:|
-| null                                                      |     +     |
-| boolean (`true` and `false`)                              |     +     |
-| integer (up to 64 bits signed or unsigned)                |     +     |
-| floating point numbers (IEEE single and double precision) |     +     |
-| string                                                    |     +     |
-| blob (binary data)                                        |     +     |
-| user defined primitive                                    |     +     |
-| list                                                      |     +     |
-| map (numeric key associative array)                       |     +     |
-| object (text key associative array)                       |     +     |
+| null                                                      |     ✓     |
+| boolean (`true` and `false`)                              |     ✓     |
+| integer (up to 64 bits signed or unsigned)                |     ✓     |
+| floating point numbers (IEEE single and double precision) |     ✓     |
+| string                                                    |     ✓     |
+| blob (binary data)                                        |     ✓     |
+| user defined primitive                                    |     ✓     |
+| list                                                      |     ✓     |
+| map (numeric key associative array)                       |     ✓     |
+| object (text key associative array)                       |     ✓     |
 
 ## Limitations
 
