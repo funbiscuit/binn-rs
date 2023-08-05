@@ -9,26 +9,24 @@ fn primitives() {
     let mut map = Map::empty_mut(buf.as_mut_slice()).unwrap();
 
     map.add_value(1, Value::Null).unwrap();
-    map.add_value(10, Value::True).unwrap();
-    map.add_value(20, Value::False).unwrap();
+    map.add_value(10, true).unwrap();
+    map.add_value(20, false).unwrap();
 
-    map.add_value(30, Value::UInt8(62)).unwrap();
-    map.add_value(40, Value::Int8(61)).unwrap();
+    map.add_value(30, 62u8).unwrap();
+    map.add_value(40, 61i8).unwrap();
 
-    map.add_value(50, Value::UInt16(6262)).unwrap();
-    map.add_value(100, Value::Int16(6161)).unwrap();
+    map.add_value(50, 6262u16).unwrap();
+    map.add_value(100, 6161i16).unwrap();
 
-    map.add_value(150, Value::UInt32(62626262)).unwrap();
-    map.add_value(200, Value::Int32(61616161)).unwrap();
-    map.add_value(500, Value::Float(0.6262)).unwrap();
+    map.add_value(150, 62626262u32).unwrap();
+    map.add_value(200, 61616161i32).unwrap();
+    map.add_value(500, 0.6262f32).unwrap();
 
-    map.add_value(1_000, Value::UInt64(6262626262626262))
-        .unwrap();
-    map.add_value(10_000, Value::Int64(6161616161616161))
-        .unwrap();
-    map.add_value(100_000, Value::Double(0.6161)).unwrap();
+    map.add_value(1_000, 6262626262626262u64).unwrap();
+    map.add_value(10_000, 6161616161616161i64).unwrap();
+    map.add_value(100_000, 0.6161f64).unwrap();
 
-    map.add_value(200_000, Value::Text("Text")).unwrap();
+    map.add_value(200_000, "Text").unwrap();
     map.add_value(5_000_000, Value::DateTime("DateTime"))
         .unwrap();
     map.add_value(10_000_000, Value::Date("Date")).unwrap();
@@ -36,7 +34,7 @@ fn primitives() {
     map.add_value(1_000_000_000, Value::DecimalStr("Decimal"))
         .unwrap();
 
-    map.add_value(2_000_000_000, Value::Blob(&[0x62, 0x61, 0x62, 0x61]))
+    map.add_value(2_000_000_000, [0x62, 0x61, 0x62, 0x61].as_slice())
         .unwrap();
 
     assert_eq!(expected, map.as_bytes());
@@ -104,14 +102,14 @@ fn containers() {
         .unwrap();
 
     child.add_value(Value::Null).unwrap();
-    child.add_value(Value::UInt8(62)).unwrap();
-    child.add_value(Value::Int8(61)).unwrap();
+    child.add_value(62u8).unwrap();
+    child.add_value(61i8).unwrap();
 
     let mut child: Map = map.add_value(20, Map::empty()).unwrap().try_into().unwrap();
 
     child.add_value(-257978445, Value::Null).unwrap();
-    child.add_value(257978445, Value::UInt8(62)).unwrap();
-    child.add_value(42, Value::Int8(61)).unwrap();
+    child.add_value(257978445, 62u8).unwrap();
+    child.add_value(42, 61i8).unwrap();
 
     let mut child_obj: Object = map
         .add_value(30, Object::empty())
@@ -120,8 +118,8 @@ fn containers() {
         .unwrap();
 
     child_obj.add_value("v_null", Value::Null).unwrap();
-    child_obj.add_value("n_u8", Value::UInt8(62)).unwrap();
-    child_obj.add_value("n_i8", Value::Int8(61)).unwrap();
+    child_obj.add_value("n_u8", 62u8).unwrap();
+    child_obj.add_value("n_i8", 61i8).unwrap();
 
     assert_eq!(expected, map.as_bytes());
 }

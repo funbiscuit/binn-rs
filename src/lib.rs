@@ -15,8 +15,8 @@
 //! let mut obj = Object::empty_mut(buf.as_mut_slice()).unwrap();
 //!
 //! // add some values
-//! obj.add_value("key1", Value::False).unwrap();
-//! obj.add_value("key2", Value::UInt16(6262)).unwrap();
+//! obj.add_value("key1", false).unwrap();
+//! obj.add_value("key2", 6262u16).unwrap();
 //!
 //! // get serialized representation
 //! let serialized = obj.as_bytes();
@@ -37,7 +37,7 @@
 //! assert_eq!(serialized, expected);
 //!
 //! // deserialize binn Value
-//! let value: Value = serialized.try_into().unwrap();
+//! let value = Value::deserialize(serialized).unwrap();
 //! // unwrap Object from value
 //! let obj: Object = value.try_into().unwrap();
 //!

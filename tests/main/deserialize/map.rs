@@ -4,7 +4,7 @@ use binn_rs::{List, Map, Object, Value};
 #[test]
 fn primitives() {
     let bytes = utils::read_encoded_file("map/primitives");
-    let value: Value = bytes.as_slice().try_into().unwrap();
+    let value = Value::deserialize(bytes.as_slice()).unwrap();
     let list: Map = value.try_into().unwrap();
 
     let expected = vec![
@@ -42,7 +42,7 @@ fn primitives() {
 #[test]
 fn user_types() {
     let bytes = utils::read_encoded_file("map/user_types");
-    let value: Value = bytes.as_slice().try_into().unwrap();
+    let value = Value::deserialize(bytes.as_slice()).unwrap();
     let list: Map = value.try_into().unwrap();
 
     let expected = vec![
@@ -84,7 +84,7 @@ fn user_types() {
 #[test]
 fn containers() {
     let bytes = utils::read_encoded_file("map/containers");
-    let value: Value = bytes.as_slice().try_into().unwrap();
+    let value = Value::deserialize(bytes.as_slice()).unwrap();
     let map: Map = value.try_into().unwrap();
 
     assert_eq!(map.count(), 3);

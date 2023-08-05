@@ -1,6 +1,5 @@
 use crate::error::Result;
 use crate::raw_container::{Key, KeyType, RawContainer};
-use crate::value::AsValue;
 use crate::Allocation;
 use crate::{Error, Value};
 
@@ -31,8 +30,11 @@ pub struct Object<'a> {
 
 impl<'a> List<'a> {
     /// Adds new value to this list
-    pub fn add_value<'c, 'p: 'c, 'd>(&'p mut self, value: impl AsValue<'d>) -> Result<Value<'c>> {
-        self.inner.add_value(Key::Empty, value)
+    pub fn add_value<'c, 'p: 'c, 'd>(
+        &'p mut self,
+        value: impl Into<Value<'d>>,
+    ) -> Result<Value<'c>> {
+        self.inner.add_value(Key::Empty, value.into())
     }
 
     /// Returns slice of bytes representing current document.
@@ -83,9 +85,9 @@ impl<'a> Map<'a> {
     pub fn add_value<'c, 'p: 'c, 'd>(
         &'p mut self,
         key: i32,
-        value: impl AsValue<'d>,
+        value: impl Into<Value<'d>>,
     ) -> Result<Value<'c>> {
-        self.inner.add_value(Key::Num(key), value)
+        self.inner.add_value(Key::Num(key), value.into())
     }
 
     /// Returns slice of bytes representing current document.
@@ -136,9 +138,9 @@ impl<'a> Object<'a> {
     pub fn add_value<'c, 'p: 'c, 'd>(
         &'p mut self,
         key: &str,
-        value: impl AsValue<'d>,
+        value: impl Into<Value<'d>>,
     ) -> Result<Value<'c>> {
-        self.inner.add_value(Key::Str(key), value)
+        self.inner.add_value(Key::Str(key), value.into())
     }
 
     /// Returns slice of bytes representing current document.
@@ -203,23 +205,23 @@ fn empty_mut<'a>(
     Ok(RawContainer::new_mut(allocation, key_type).unwrap())
 }
 
-impl<'a> AsValue<'a> for List<'a> {
-    fn to_value(self) -> Value<'a> {
-        let inner = self.inner.clone();
+impl<'a> From<List<'a>> for Value<'a> {
+    fn from(value: List<'a>) -> Self {
+        let inner = value.inner.clone();
         Value::List(List { inner })
     }
 }
 
-impl<'a> AsValue<'a> for Map<'a> {
-    fn to_value(self) -> Value<'a> {
-        let inner = self.inner.clone();
+impl<'a> From<Map<'a>> for Value<'a> {
+    fn from(value: Map<'a>) -> Self {
+        let inner = value.inner.clone();
         Value::Map(Map { inner })
     }
 }
 
-impl<'a> AsValue<'a> for Object<'a> {
-    fn to_value(self) -> Value<'a> {
-        let inner = self.inner.clone();
+impl<'a> From<Object<'a>> for Value<'a> {
+    fn from(value: Object<'a>) -> Self {
+        let inner = value.inner.clone();
         Value::Object(Object { inner })
     }
 }

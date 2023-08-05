@@ -101,6 +101,85 @@ pub enum Value<'a> {
 }
 
 impl<'a> Value<'a> {
+    /// Try to deserialize given bytes as binn value
+    pub fn deserialize(bytes: &'a [u8]) -> Result<Self> {
+        let data_type: Type = bytes.try_into()?;
+        let value = &bytes[data_type.size()..];
+
+        match data_type {
+            data_type::NULL => return Ok(Value::Null),
+            data_type::TRUE => return Ok(Value::True),
+            data_type::FALSE => return Ok(Value::False),
+            data_type::UINT8 => return Ok(Value::UInt8(utils::read_u8(value)?)),
+            data_type::INT8 => return Ok(Value::Int8(utils::read_i8(value)?)),
+            data_type::UINT16 => return Ok(Value::UInt16(utils::read_u16(value)?)),
+            data_type::INT16 => return Ok(Value::Int16(utils::read_i16(value)?)),
+            data_type::UINT32 => return Ok(Value::UInt32(utils::read_u32(value)?)),
+            data_type::INT32 => return Ok(Value::Int32(utils::read_i32(value)?)),
+            data_type::FLOAT => return Ok(Value::Float(utils::read_f32(value)?)),
+            data_type::UINT64 => return Ok(Value::UInt64(utils::read_u64(value)?)),
+            data_type::INT64 => return Ok(Value::Int64(utils::read_i64(value)?)),
+            data_type::DOUBLE => return Ok(Value::Double(utils::read_f64(value)?)),
+            data_type::TEXT => return Ok(Value::Text(utils::read_text(value)?)),
+            data_type::DATE_TIME => return Ok(Value::DateTime(utils::read_text(value)?)),
+            data_type::DATE => return Ok(Value::Date(utils::read_text(value)?)),
+            data_type::TIME => return Ok(Value::Time(utils::read_text(value)?)),
+            data_type::DECIMAL_STR => return Ok(Value::DecimalStr(utils::read_text(value)?)),
+            data_type::BLOB => return Ok(Value::Blob(utils::read_blob(value)?)),
+            Type {
+                storage: Storage::NoBytes,
+                subtype,
+            } => return Ok(Value::Empty(subtype)),
+            Type {
+                storage: Storage::Byte,
+                subtype,
+            } => return Ok(Value::Byte(subtype, utils::read_u8(value)?)),
+            Type {
+                storage: Storage::Word,
+                subtype,
+            } => return Ok(Value::Word(subtype, utils::read_u16(value)?)),
+            Type {
+                storage: Storage::DWord,
+                subtype,
+            } => return Ok(Value::DWord(subtype, utils::read_u32(value)?)),
+            Type {
+                storage: Storage::QWord,
+                subtype,
+            } => return Ok(Value::QWord(subtype, utils::read_u64(value)?)),
+            Type {
+                storage: Storage::String,
+                subtype,
+            } => return Ok(Value::UserText(subtype, utils::read_text(value)?)),
+            Type {
+                storage: Storage::Blob,
+                subtype,
+            } => return Ok(Value::UserBlob(subtype, utils::read_blob(value)?)),
+            // container storage is handled separately
+            Type {
+                storage: Storage::Container,
+                subtype: _,
+            } => {}
+        }
+        // all simple values handled, now deserialize container
+
+        match data_type {
+            data_type::LIST => Ok(Value::List(List {
+                inner: RawContainer::from_bytes(bytes, KeyType::Empty)?,
+            })),
+            data_type::MAP => Ok(Value::Map(Map {
+                inner: RawContainer::from_bytes(bytes, KeyType::Num)?,
+            })),
+            data_type::OBJECT => Ok(Value::Object(Object {
+                inner: RawContainer::from_bytes(bytes, KeyType::Str)?,
+            })),
+            Type {
+                storage: Storage::Container,
+                subtype: _,
+            } => Err(Error::Malformed),
+            _ => unreachable!(),
+        }
+    }
+
     /// Returns how many bytes \[data\] will take, when it needs \[size\] element
     ///
     /// # Panics
@@ -282,88 +361,6 @@ impl<'a> Value<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for Value<'a> {
-    type Error = Error;
-
-    fn try_from(bytes: &'a [u8]) -> Result<Self> {
-        let data_type: Type = bytes.try_into()?;
-        let value = &bytes[data_type.size()..];
-
-        match data_type {
-            data_type::NULL => return Ok(Value::Null),
-            data_type::TRUE => return Ok(Value::True),
-            data_type::FALSE => return Ok(Value::False),
-            data_type::UINT8 => return Ok(Value::UInt8(utils::read_u8(value)?)),
-            data_type::INT8 => return Ok(Value::Int8(utils::read_i8(value)?)),
-            data_type::UINT16 => return Ok(Value::UInt16(utils::read_u16(value)?)),
-            data_type::INT16 => return Ok(Value::Int16(utils::read_i16(value)?)),
-            data_type::UINT32 => return Ok(Value::UInt32(utils::read_u32(value)?)),
-            data_type::INT32 => return Ok(Value::Int32(utils::read_i32(value)?)),
-            data_type::FLOAT => return Ok(Value::Float(utils::read_f32(value)?)),
-            data_type::UINT64 => return Ok(Value::UInt64(utils::read_u64(value)?)),
-            data_type::INT64 => return Ok(Value::Int64(utils::read_i64(value)?)),
-            data_type::DOUBLE => return Ok(Value::Double(utils::read_f64(value)?)),
-            data_type::TEXT => return Ok(Value::Text(utils::read_text(value)?)),
-            data_type::DATE_TIME => return Ok(Value::DateTime(utils::read_text(value)?)),
-            data_type::DATE => return Ok(Value::Date(utils::read_text(value)?)),
-            data_type::TIME => return Ok(Value::Time(utils::read_text(value)?)),
-            data_type::DECIMAL_STR => return Ok(Value::DecimalStr(utils::read_text(value)?)),
-            data_type::BLOB => return Ok(Value::Blob(utils::read_blob(value)?)),
-            Type {
-                storage: Storage::NoBytes,
-                subtype,
-            } => return Ok(Value::Empty(subtype)),
-            Type {
-                storage: Storage::Byte,
-                subtype,
-            } => return Ok(Value::Byte(subtype, utils::read_u8(value)?)),
-            Type {
-                storage: Storage::Word,
-                subtype,
-            } => return Ok(Value::Word(subtype, utils::read_u16(value)?)),
-            Type {
-                storage: Storage::DWord,
-                subtype,
-            } => return Ok(Value::DWord(subtype, utils::read_u32(value)?)),
-            Type {
-                storage: Storage::QWord,
-                subtype,
-            } => return Ok(Value::QWord(subtype, utils::read_u64(value)?)),
-            Type {
-                storage: Storage::String,
-                subtype,
-            } => return Ok(Value::UserText(subtype, utils::read_text(value)?)),
-            Type {
-                storage: Storage::Blob,
-                subtype,
-            } => return Ok(Value::UserBlob(subtype, utils::read_blob(value)?)),
-            // container storage is handled separately
-            Type {
-                storage: Storage::Container,
-                subtype: _,
-            } => {}
-        }
-        // all simple values handled, now deserialize container
-
-        match data_type {
-            data_type::LIST => Ok(Value::List(List {
-                inner: RawContainer::from_bytes(bytes, KeyType::Empty)?,
-            })),
-            data_type::MAP => Ok(Value::Map(Map {
-                inner: RawContainer::from_bytes(bytes, KeyType::Num)?,
-            })),
-            data_type::OBJECT => Ok(Value::Object(Object {
-                inner: RawContainer::from_bytes(bytes, KeyType::Str)?,
-            })),
-            Type {
-                storage: Storage::Container,
-                subtype: _,
-            } => Err(Error::Malformed),
-            _ => unreachable!(),
-        }
-    }
-}
-
 impl<'a> TryFrom<Value<'a>> for List<'a> {
     type Error = Value<'a>;
 
@@ -400,15 +397,35 @@ impl<'a> TryFrom<Value<'a>> for Object<'a> {
     }
 }
 
-/// Helper trait to simplify conversions from normal types to value
-///
-/// Either as_ref or as_val must return Some
-pub trait AsValue<'a> {
-    fn to_value(self) -> Value<'a>;
-}
-
-impl<'a> AsValue<'a> for Value<'a> {
-    fn to_value(self) -> Value<'a> {
-        self
+impl<'a> From<bool> for Value<'a> {
+    fn from(value: bool) -> Self {
+        if value {
+            Value::True
+        } else {
+            Value::False
+        }
     }
 }
+
+macro_rules! value_from_impl {
+    ($value_type:ty, $enum_name:ident) => {
+        impl<'a> From<$value_type> for Value<'a> {
+            fn from(value: $value_type) -> Self {
+                Value::$enum_name(value)
+            }
+        }
+    };
+}
+
+value_from_impl!(u8, UInt8);
+value_from_impl!(i8, Int8);
+value_from_impl!(u16, UInt16);
+value_from_impl!(i16, Int16);
+value_from_impl!(u32, UInt32);
+value_from_impl!(i32, Int32);
+value_from_impl!(f32, Float);
+value_from_impl!(u64, UInt64);
+value_from_impl!(i64, Int64);
+value_from_impl!(f64, Double);
+value_from_impl!(&'a str, Text);
+value_from_impl!(&'a [u8], Blob);

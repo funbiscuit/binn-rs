@@ -4,7 +4,6 @@ use byteorder::{BigEndian, ByteOrder};
 use core::marker::PhantomData;
 
 use crate::size::Size;
-use crate::value::AsValue;
 use crate::Allocation;
 use core::ptr::NonNull;
 
@@ -110,9 +109,8 @@ impl<'a> RawContainer<'a> {
     pub fn add_value<'c, 'p: 'c, 'd>(
         &'p mut self,
         key: Key<'_>,
-        value: impl AsValue<'d>,
+        value: Value<'d>,
     ) -> Result<Value<'c>> {
-        let value = value.to_value();
         // addition of container is handled separately
         match value {
             Value::List(list) => {
@@ -459,7 +457,7 @@ impl<'a> Iterator for RawIterator<'a> {
         };
         self.cursor += key.size();
         let buf = &self.container.as_bytes()[self.cursor..];
-        let value = Value::try_from(buf).ok()?;
+        let value = Value::deserialize(buf).ok()?;
         self.cursor += value.total_size();
 
         Some((key, value))

@@ -9,26 +9,24 @@ fn primitives() {
     let mut obj = Object::empty_mut(buf.as_mut_slice()).unwrap();
 
     obj.add_value("v_null", Value::Null).unwrap();
-    obj.add_value("v_true", Value::True).unwrap();
-    obj.add_value("v_false", Value::False).unwrap();
+    obj.add_value("v_true", true).unwrap();
+    obj.add_value("v_false", false).unwrap();
 
-    obj.add_value("n_u8", Value::UInt8(62)).unwrap();
-    obj.add_value("n_i8", Value::Int8(61)).unwrap();
+    obj.add_value("n_u8", 62u8).unwrap();
+    obj.add_value("n_i8", 61i8).unwrap();
 
-    obj.add_value("n_u16", Value::UInt16(6262)).unwrap();
-    obj.add_value("n_i16", Value::Int16(6161)).unwrap();
+    obj.add_value("n_u16", 6262u16).unwrap();
+    obj.add_value("n_i16", 6161i16).unwrap();
 
-    obj.add_value("n_u32", Value::UInt32(62626262)).unwrap();
-    obj.add_value("n_i32", Value::Int32(61616161)).unwrap();
-    obj.add_value("n_f32", Value::Float(0.6262)).unwrap();
+    obj.add_value("n_u32", 62626262u32).unwrap();
+    obj.add_value("n_i32", 61616161i32).unwrap();
+    obj.add_value("n_f32", 0.6262f32).unwrap();
 
-    obj.add_value("n_u64", Value::UInt64(6262626262626262))
-        .unwrap();
-    obj.add_value("n_i64", Value::Int64(6161616161616161))
-        .unwrap();
-    obj.add_value("n_f64", Value::Double(0.6161)).unwrap();
+    obj.add_value("n_u64", 6262626262626262u64).unwrap();
+    obj.add_value("n_i64", 6161616161616161i64).unwrap();
+    obj.add_value("n_f64", 0.6161f64).unwrap();
 
-    obj.add_value("s_text", Value::Text("Text")).unwrap();
+    obj.add_value("s_text", "Text").unwrap();
     obj.add_value("s_datetime", Value::DateTime("DateTime"))
         .unwrap();
     obj.add_value("s_date", Value::Date("Date")).unwrap();
@@ -36,7 +34,7 @@ fn primitives() {
     obj.add_value("s_decimal", Value::DecimalStr("Decimal"))
         .unwrap();
 
-    obj.add_value("b_blob", Value::Blob(&[0x62, 0x61, 0x62, 0x61]))
+    obj.add_value("b_blob", [0x62, 0x61, 0x62, 0x61].as_slice())
         .unwrap();
 
     assert_eq!(expected, obj.as_bytes());
@@ -105,8 +103,8 @@ fn containers() {
         .unwrap();
 
     child.add_value(Value::Null).unwrap();
-    child.add_value(Value::UInt8(62)).unwrap();
-    child.add_value(Value::Int8(61)).unwrap();
+    child.add_value(62u8).unwrap();
+    child.add_value(61i8).unwrap();
 
     let mut child: Map = obj
         .add_value("map", Map::empty())
@@ -115,8 +113,8 @@ fn containers() {
         .unwrap();
 
     child.add_value(-257978445, Value::Null).unwrap();
-    child.add_value(257978445, Value::UInt8(62)).unwrap();
-    child.add_value(42, Value::Int8(61)).unwrap();
+    child.add_value(257978445, 62u8).unwrap();
+    child.add_value(42, 61i8).unwrap();
 
     let mut child_obj: Object = obj
         .add_value("obj", Object::empty())
@@ -125,8 +123,8 @@ fn containers() {
         .unwrap();
 
     child_obj.add_value("v_null", Value::Null).unwrap();
-    child_obj.add_value("n_u8", Value::UInt8(62)).unwrap();
-    child_obj.add_value("n_i8", Value::Int8(61)).unwrap();
+    child_obj.add_value("n_u8", 62u8).unwrap();
+    child_obj.add_value("n_i8", 61i8).unwrap();
 
     assert_eq!(expected, obj.as_bytes());
 }
