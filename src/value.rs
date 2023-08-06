@@ -1,10 +1,10 @@
 use crate::data_type::Type;
 use crate::storage::Storage;
 use crate::subtype::SubType;
-use crate::{data_type, utils, Error, List, Map, Object};
+use crate::{data_type, utils, List, Map, Object};
 use byteorder::{BigEndian, ByteOrder};
 
-use crate::error::Result;
+use crate::error::DeserializeError;
 use crate::raw_container::{KeyType, RawContainer};
 use crate::size::Size;
 
@@ -102,7 +102,7 @@ pub enum Value<'a> {
 
 impl<'a> Value<'a> {
     /// Try to deserialize given bytes as binn value
-    pub fn deserialize(bytes: &'a [u8]) -> Result<Self> {
+    pub fn deserialize(bytes: &'a [u8]) -> Result<Self, DeserializeError> {
         let data_type: Type = bytes.try_into()?;
         let value = &bytes[data_type.size()..];
 
@@ -164,18 +164,18 @@ impl<'a> Value<'a> {
 
         match data_type {
             data_type::LIST => Ok(Value::List(List {
-                inner: RawContainer::from_bytes(bytes, KeyType::Empty)?,
+                inner: RawContainer::deserialize(bytes, KeyType::Empty)?,
             })),
             data_type::MAP => Ok(Value::Map(Map {
-                inner: RawContainer::from_bytes(bytes, KeyType::Num)?,
+                inner: RawContainer::deserialize(bytes, KeyType::Num)?,
             })),
             data_type::OBJECT => Ok(Value::Object(Object {
-                inner: RawContainer::from_bytes(bytes, KeyType::Str)?,
+                inner: RawContainer::deserialize(bytes, KeyType::Str)?,
             })),
             Type {
                 storage: Storage::Container,
                 subtype: _,
-            } => Err(Error::Malformed),
+            } => Err(DeserializeError::InvalidType),
             _ => unreachable!(),
         }
     }
@@ -287,32 +287,33 @@ impl<'a> Value<'a> {
 
     /// Writes this value (\[type\] \[size\] \[data\]) to given buffer
     /// and returns next insert position, how many bytes were written
-    pub(crate) fn write<'b>(&self, buf: &'b mut [u8]) -> Result<(&'b mut [u8], usize)> {
+    ///
+    /// # Panics
+    ///
+    /// Panics if given buffer is not big enough
+    pub(crate) fn write(&self, buf: &mut [u8]) {
         let total_size = self.total_size();
 
-        if buf.len() < total_size {
-            return Err(Error::SmallBuffer(total_size - buf.len()));
-        }
+        assert!(total_size <= buf.len());
 
         match self {
             Value::List(list) => {
                 buf[..total_size].copy_from_slice(list.as_bytes());
-                return Ok((&mut buf[total_size..], total_size));
+                return;
             }
             Value::Map(map) => {
                 buf[..total_size].copy_from_slice(map.as_bytes());
-                return Ok((&mut buf[total_size..], total_size));
+                return;
             }
             Value::Object(obj) => {
                 buf[..total_size].copy_from_slice(obj.as_bytes());
-                return Ok((&mut buf[total_size..], total_size));
+                return;
             }
             _ => {}
         }
 
         let value_type = self.get_type();
 
-        let fixed_size = value_type.storage.fixed_size();
         let data_size = self.data_size();
 
         // write [type]
@@ -324,7 +325,7 @@ impl<'a> Value<'a> {
                 // for string storage we should not count null terminator in [size] item
                 data_size -= 1;
             }
-            buf = Size::new(data_size).unwrap().write(buf).unwrap();
+            buf = Size::new(data_size).unwrap().write(buf);
         }
 
         // write [data] if present
@@ -353,18 +354,13 @@ impl<'a> Value<'a> {
 
             _ => unreachable!(),
         }
-
-        // add [data] size to buffer and return it
-        let buf = &mut buf[data_size.or(fixed_size).unwrap()..];
-
-        Ok((buf, total_size))
     }
 }
 
 impl<'a> TryFrom<Value<'a>> for List<'a> {
     type Error = Value<'a>;
 
-    fn try_from(value: Value<'a>) -> core::result::Result<Self, Self::Error> {
+    fn try_from(value: Value<'a>) -> Result<Self, Self::Error> {
         if let Value::List(list) = value {
             Ok(list)
         } else {
@@ -376,7 +372,7 @@ impl<'a> TryFrom<Value<'a>> for List<'a> {
 impl<'a> TryFrom<Value<'a>> for Map<'a> {
     type Error = Value<'a>;
 
-    fn try_from(value: Value<'a>) -> core::result::Result<Self, Self::Error> {
+    fn try_from(value: Value<'a>) -> Result<Self, Self::Error> {
         if let Value::Map(map) = value {
             Ok(map)
         } else {
@@ -388,7 +384,7 @@ impl<'a> TryFrom<Value<'a>> for Map<'a> {
 impl<'a> TryFrom<Value<'a>> for Object<'a> {
     type Error = Value<'a>;
 
-    fn try_from(value: Value<'a>) -> core::result::Result<Self, Self::Error> {
+    fn try_from(value: Value<'a>) -> Result<Self, Self::Error> {
         if let Value::Object(obj) = value {
             Ok(obj)
         } else {

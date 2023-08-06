@@ -1,5 +1,5 @@
-use crate::error::{OutOfRangeError, Result};
-use crate::{utils, Error};
+use crate::error::{DeserializeError, OutOfRangeError};
+use crate::utils;
 use byteorder::{BigEndian, ByteOrder};
 
 /// Maximum possible size that can be used
@@ -23,13 +23,17 @@ impl Size {
         self.size() == 1
     }
 
-    pub fn new(value: usize) -> core::result::Result<Self, OutOfRangeError> {
+    pub fn new(value: usize) -> Result<Self, OutOfRangeError<usize>> {
         if Self::is_compactable(value) {
             Ok(Size::Compact(value as u8))
         } else if value <= MAX_SIZE as usize {
             Ok(Size::Full(value as u32))
         } else {
-            Err(OutOfRangeError)
+            Err(OutOfRangeError {
+                min: Some(0),
+                max: Some(MAX_SIZE as usize),
+                value,
+            })
         }
     }
 
@@ -50,12 +54,14 @@ impl Size {
 
     /// Writes this size to given buffer in its compact or full form
     /// and returns next insert position
-    pub fn write<'b>(&self, buf: &'b mut [u8]) -> Result<&'b mut [u8]> {
+    ///
+    /// # Panics
+    ///
+    /// Panics if given buffer is not big enough
+    pub fn write<'b>(&self, buf: &'b mut [u8]) -> &'b mut [u8] {
         let total_size = self.size();
 
-        if buf.len() < total_size {
-            return Err(Error::SmallBuffer(total_size - buf.len()));
-        }
+        assert!(total_size <= buf.len());
 
         match self {
             Size::Compact(v) => {
@@ -66,16 +72,16 @@ impl Size {
             }
         }
 
-        Ok(&mut buf[total_size..])
+        &mut buf[total_size..]
     }
 }
 
 impl<'a> TryFrom<&'a [u8]> for Size {
-    type Error = Error;
+    type Error = DeserializeError;
 
-    fn try_from(bytes: &'a [u8]) -> Result<Self> {
+    fn try_from(bytes: &'a [u8]) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            return Err(Error::Malformed);
+            return Err(DeserializeError::InvalidData);
         }
 
         if (bytes[0] & 0x80) == 0 {
@@ -85,7 +91,7 @@ impl<'a> TryFrom<&'a [u8]> for Size {
             // remove first bit
             Ok(Size::Full(v & MAX_SIZE))
         } else {
-            Err(Error::Malformed)
+            Err(DeserializeError::InvalidData)
         }
     }
 }

@@ -6,7 +6,7 @@
 /// ```
 /// use binn_rs::{SubType, Value};
 ///
-/// const CUSTOM_TEXT: SubType = SubType::new(7);
+/// const CUSTOM_TEXT: SubType = SubType::new_unchecked(7);
 ///
 /// let value = Value::UserText(CUSTOM_TEXT, "some text that means something");
 /// ```
@@ -16,13 +16,17 @@ pub struct SubType(pub(crate) u16);
 macro_rules! impl_try_from {
     ($name:ident) => {
         impl TryFrom<$name> for SubType {
-            type Error = crate::error::OutOfRangeError;
+            type Error = crate::error::OutOfRangeError<$name>;
 
             fn try_from(value: $name) -> Result<Self, Self::Error> {
                 if (0..4096).contains(&value) {
                     Ok(Self(value as u16))
                 } else {
-                    Err(crate::error::OutOfRangeError)
+                    Err(crate::error::OutOfRangeError {
+                        min: Some(0),
+                        max: Some(4095),
+                        value,
+                    })
                 }
             }
         }
@@ -49,11 +53,20 @@ impl SubType {
     ///
     /// Panics if value is greater than 4095 so it can't
     /// be a valid subtype
-    pub const fn new(value: u16) -> Self {
+    pub const fn new_unchecked(value: u16) -> Self {
+        assert!(value < 4096);
+        Self(value)
+    }
+
+    /// Creates new sub type from given value
+    ///
+    /// Returns None if value is greater than 4095 so it can't
+    /// be a valid subtype
+    pub const fn new(value: u16) -> Option<Self> {
         if value < 4096 {
-            Self(value)
+            Some(Self(value))
         } else {
-            panic!("Number is out of range");
+            None
         }
     }
 

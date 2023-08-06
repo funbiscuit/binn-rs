@@ -1,9 +1,7 @@
+use crate::error::DeserializeError;
 use crate::storage::Storage;
 use crate::subtype::SubType;
-use crate::Error;
 use byteorder::{BigEndian, ByteOrder};
-
-use crate::error::Result;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Type {
@@ -46,11 +44,11 @@ impl Type {
 }
 
 impl TryFrom<&[u8]> for Type {
-    type Error = Error;
+    type Error = DeserializeError;
 
-    fn try_from(value: &[u8]) -> Result<Self> {
+    fn try_from(value: &[u8]) -> Result<Self, DeserializeError> {
         if value.is_empty() {
-            return Err(Error::Malformed);
+            return Err(DeserializeError::InvalidType);
         }
 
         let is_u8 = (value[0] & 0x10) == 0;
@@ -61,7 +59,7 @@ impl TryFrom<&[u8]> for Type {
             value[0] as u16 & 0x0F
         } else {
             if value.len() == 1 {
-                return Err(Error::Malformed);
+                return Err(DeserializeError::InvalidType);
             }
             ((value[0] as u16 & 0x0F) << 8) | value[1] as u16
         }

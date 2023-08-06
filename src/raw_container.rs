@@ -1,8 +1,8 @@
-use crate::error::Result;
-use crate::{utils, Error, List, Map, Object, Value};
+use crate::{utils, List, Map, Object, Value};
 use byteorder::{BigEndian, ByteOrder};
 use core::marker::PhantomData;
 
+use crate::error::{AddValueError, DeserializeError, SmallBufferError};
 use crate::size::Size;
 use crate::Allocation;
 use core::ptr::NonNull;
@@ -75,10 +75,13 @@ impl<'a> RawContainer<'a> {
         &mut self,
         key: Key<'_>,
         container: &RawContainer<'_>,
-    ) -> Result<RawContainer<'_>> {
+    ) -> Result<RawContainer<'_>, AddValueError> {
         self.check_available_size(key.size() + container.len.value())?;
 
-        let key_size = self.ensure_mutable()?.write_key(key)?;
+        let key_size = self
+            .ensure_mutable()
+            .map_err(|_| AddValueError::ReadOnly)?
+            .write_key(key)?;
 
         let parent = NonNull::new(self as *mut RawContainer<'_>);
 
@@ -110,7 +113,7 @@ impl<'a> RawContainer<'a> {
         &'p mut self,
         key: Key<'_>,
         value: Value<'d>,
-    ) -> Result<Value<'c>> {
+    ) -> Result<Value<'c>, AddValueError> {
         // addition of container is handled separately
         match value {
             Value::List(list) => {
@@ -131,7 +134,10 @@ impl<'a> RawContainer<'a> {
         let data_size = value.total_size();
         self.check_available_size(key.size() + data_size)?;
 
-        let key_size = self.ensure_mutable()?.write_key(key)?;
+        let key_size = self
+            .ensure_mutable()
+            .map_err(|_| AddValueError::ReadOnly)?
+            .write_key(key)?;
 
         // write key doesn't update container size, so len
         // will be at the beginning of the key
@@ -141,8 +147,7 @@ impl<'a> RawContainer<'a> {
 
         let buf = &mut self.as_bytes_mut()[len_with_key..];
 
-        // size is already checked, no error possible
-        value.write(buf).unwrap();
+        value.write(buf);
 
         // skip size and type entry, used for restoring of text and blob
         let buf = &buf[value.get_type().size()..];
@@ -219,7 +224,10 @@ impl<'a> RawContainer<'a> {
     }
 
     /// Create read-only container from given slice
-    pub fn from_bytes(bytes: &[u8], key_type: KeyType) -> Result<RawContainer<'_>> {
+    pub fn deserialize(
+        bytes: &[u8],
+        key_type: KeyType,
+    ) -> Result<RawContainer<'_>, DeserializeError> {
         // skip type byte
         let len: Size = bytes[1..].try_into()?;
         let count: Size = bytes[(len.size() + 1)..].try_into()?;
@@ -238,16 +246,19 @@ impl<'a> RawContainer<'a> {
         if container.iter().count() == count.value() {
             Ok(container)
         } else {
-            Err(Error::Malformed)
+            Err(DeserializeError::InvalidData)
         }
     }
 
     /// Create writable container from given allocation
     ///
     /// Allocation must contain valid container data
-    pub fn new_mut(allocation: Allocation<'_>, key_type: KeyType) -> Result<RawContainer<'_>> {
+    pub fn new_mut(
+        allocation: Allocation<'_>,
+        key_type: KeyType,
+    ) -> Result<RawContainer<'_>, DeserializeError> {
         let container = match allocation {
-            Allocation::Static(bytes) => Self::from_bytes(bytes, key_type)?,
+            Allocation::Static(bytes) => Self::deserialize(bytes, key_type)?,
         };
 
         // we have mutable pointer for storage
@@ -290,7 +301,7 @@ impl<'a> RawContainer<'a> {
     }
     /// Check if new item with given size can be added
     /// Size must include key size
-    fn check_available_size(&mut self, item_size: usize) -> Result<()> {
+    fn check_available_size(&mut self, item_size: usize) -> Result<(), SmallBufferError> {
         let len = self.len.value();
         let mut new_len = len + item_size;
         // adjust len if len or count can't be compacted anymore
@@ -304,18 +315,20 @@ impl<'a> RawContainer<'a> {
         let buf = self.insert_position();
 
         if buf.len() < new_len - len {
-            Err(Error::SmallBuffer(new_len - len - buf.len()))
+            Err(SmallBufferError {
+                required_extra: new_len - len - buf.len(),
+            })
         } else {
             Ok(())
         }
     }
 
-    /// Checks that container, otherwise returns error
-    fn ensure_mutable(&mut self) -> Result<&mut Self> {
+    /// Checks that container is mutable, otherwise returns error
+    fn ensure_mutable(&mut self) -> Result<&mut Self, ()> {
         if self.mutable {
             Ok(self)
         } else {
-            Err(Error::ReadOnly)
+            Err(())
         }
     }
 
@@ -358,8 +371,8 @@ impl<'a> RawContainer<'a> {
 
         // size of buffer is already checked
         let buf = self.as_bytes_mut();
-        let buf = new_len.write(&mut buf[1..]).unwrap();
-        new_count.write(buf).unwrap();
+        let buf = new_len.write(&mut buf[1..]);
+        new_count.write(buf);
 
         if let Some(parent) = self.parent_mut() {
             parent.increment_size_and_count(extra_size + shift, 0);
@@ -388,7 +401,7 @@ impl<'a> RawContainer<'a> {
     /// Begins new item (writes its key) and returns how many bytes were written
     ///
     /// Container count and size is not updated
-    fn write_key(&mut self, key: Key<'_>) -> Result<usize> {
+    fn write_key(&mut self, key: Key<'_>) -> Result<usize, AddValueError> {
         match key {
             Key::Empty => Ok(0),
             Key::Num(key) => self.write_i32_key(key),
@@ -399,11 +412,11 @@ impl<'a> RawContainer<'a> {
     /// Writes str key and returns how many bytes were written
     ///
     /// Size and count are not updated
-    fn write_str_key(&mut self, key: &str) -> Result<usize> {
+    fn write_str_key(&mut self, key: &str) -> Result<usize, AddValueError> {
         let key = key.as_bytes();
 
         if key.len() > 255 {
-            return Err(Error::LongKey);
+            return Err(AddValueError::LongKey);
         }
 
         // key does not include null terminator but includes key length (1 byte)
@@ -422,7 +435,7 @@ impl<'a> RawContainer<'a> {
     /// Writes i32 key and returns how many bytes were written
     ///
     /// Size and count are not updated
-    fn write_i32_key(&mut self, key: i32) -> Result<usize> {
+    fn write_i32_key(&mut self, key: i32) -> Result<usize, AddValueError> {
         // size of buffer is already checked
         BigEndian::write_i32(self.insert_position(), key);
 

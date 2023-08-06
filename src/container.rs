@@ -1,7 +1,7 @@
-use crate::error::Result;
+use crate::error::{AddValueError, SmallBufferError};
 use crate::raw_container::{Key, KeyType, RawContainer};
 use crate::Allocation;
-use crate::{Error, Value};
+use crate::Value;
 
 const EMPTY_LIST: &[u8] = &[0xE0, 0x03, 0x00];
 const EMPTY_MAP: &[u8] = &[0xE1, 0x03, 0x00];
@@ -33,7 +33,7 @@ impl<'a> List<'a> {
     pub fn add_value<'c, 'p: 'c, 'd>(
         &'p mut self,
         value: impl Into<Value<'d>>,
-    ) -> Result<Value<'c>> {
+    ) -> Result<Value<'c>, AddValueError> {
         self.inner.add_value(Key::Empty, value.into())
     }
 
@@ -58,12 +58,12 @@ impl<'a> List<'a> {
     pub fn empty() -> List<'static> {
         // EMPTY_LIST can't be malformed
         List {
-            inner: RawContainer::from_bytes(EMPTY_LIST, KeyType::Empty).unwrap(),
+            inner: RawContainer::deserialize(EMPTY_LIST, KeyType::Empty).unwrap(),
         }
     }
 
     /// Creates a new list that uses given allocation for storage
-    pub fn empty_mut(allocation: impl Into<Allocation<'a>>) -> Result<Self> {
+    pub fn empty_mut(allocation: impl Into<Allocation<'a>>) -> Result<Self, SmallBufferError> {
         Ok(Self {
             inner: empty_mut(allocation.into(), EMPTY_LIST, KeyType::Empty)?,
         })
@@ -86,7 +86,7 @@ impl<'a> Map<'a> {
         &'p mut self,
         key: i32,
         value: impl Into<Value<'d>>,
-    ) -> Result<Value<'c>> {
+    ) -> Result<Value<'c>, AddValueError> {
         self.inner.add_value(Key::Num(key), value.into())
     }
 
@@ -111,12 +111,12 @@ impl<'a> Map<'a> {
     pub fn empty() -> Map<'static> {
         // EMPTY_MAP can't be malformed
         Map {
-            inner: RawContainer::from_bytes(EMPTY_MAP, KeyType::Num).unwrap(),
+            inner: RawContainer::deserialize(EMPTY_MAP, KeyType::Num).unwrap(),
         }
     }
 
     /// Creates a new object that uses given allocation for storage
-    pub fn empty_mut(allocation: impl Into<Allocation<'a>>) -> Result<Self> {
+    pub fn empty_mut(allocation: impl Into<Allocation<'a>>) -> Result<Self, SmallBufferError> {
         Ok(Self {
             inner: empty_mut(allocation.into(), EMPTY_MAP, KeyType::Num)?,
         })
@@ -139,7 +139,7 @@ impl<'a> Object<'a> {
         &'p mut self,
         key: &str,
         value: impl Into<Value<'d>>,
-    ) -> Result<Value<'c>> {
+    ) -> Result<Value<'c>, AddValueError> {
         self.inner.add_value(Key::Str(key), value.into())
     }
 
@@ -164,12 +164,12 @@ impl<'a> Object<'a> {
     pub fn empty() -> Object<'static> {
         // EMPTY_OBJ can't be malformed
         Object {
-            inner: RawContainer::from_bytes(EMPTY_OBJ, KeyType::Str).unwrap(),
+            inner: RawContainer::deserialize(EMPTY_OBJ, KeyType::Str).unwrap(),
         }
     }
 
     /// Creates a new object that uses given allocation for storage
-    pub fn empty_mut(allocation: impl Into<Allocation<'a>>) -> Result<Self> {
+    pub fn empty_mut(allocation: impl Into<Allocation<'a>>) -> Result<Self, SmallBufferError> {
         Ok(Self {
             inner: empty_mut(allocation.into(), EMPTY_OBJ, KeyType::Str)?,
         })
@@ -191,12 +191,14 @@ fn empty_mut<'a>(
     mut allocation: Allocation<'a>,
     source: &[u8],
     key_type: KeyType,
-) -> Result<RawContainer<'a>> {
+) -> Result<RawContainer<'a>, SmallBufferError> {
     let len = source.len();
     match &mut allocation {
         Allocation::Static(buf) => {
             if buf.len() < len {
-                return Err(Error::SmallBuffer(len - buf.len()));
+                return Err(SmallBufferError {
+                    required_extra: len - buf.len(),
+                });
             }
             buf[..len].copy_from_slice(source);
         }

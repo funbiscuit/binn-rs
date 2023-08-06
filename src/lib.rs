@@ -61,10 +61,12 @@
 #![no_std]
 #![warn(rust_2018_idioms, missing_debug_implementations, missing_docs)]
 
+/// Module contains possible error types
+pub mod error;
+
 mod allocation;
 mod container;
 mod data_type;
-mod error;
 mod raw_container;
 mod size;
 mod storage;
@@ -74,6 +76,5 @@ mod value;
 
 pub use allocation::Allocation;
 pub use container::{List, Map, Object};
-pub use error::Error;
 pub use subtype::SubType;
 pub use value::Value;
